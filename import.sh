@@ -56,8 +56,9 @@ echo "########## FINISHED SCRAPING FONDS ##########"
 
 #this is a failsafe to ensure the right number of files are there after scrape before purging the db
 numFiles=$(find $localDir/scrape/ -type f | wc -l)
+numCollections=$(cat fonds.txt | wc -l)
 
-if [ "$numFiles" != "$(wc -l fonds.txt)" ]
+if [ "$numFiles" != "$numCollections" ]
 then
    echo "######## THERE ARE NOT 173 COLLECTIONS SCRAPED ########"
 fi
@@ -77,6 +78,8 @@ exec 1>$localDir/log/import.txt
 echo "######## IMPORTING #######"
 
 php /usr/share/nginx/atom/symfony import:bulk --update="delete-and-replace" /home/maximus/xml/scrape
+
+mysql -u delete atom -e 'DELETE FROM term_i18n WHERE culture NOT LIKE "en";'
 
 echo "######## REBUILDING CACHE #######"
 #if you want the local AtoM instance to show the collection

@@ -14,7 +14,7 @@ for($i = $page + 1; $i <= $last_page ; $i++) {
         $output .= $fonds['output'];
 }
 
-file_put_contents('fonds.txt', $output);
+file_put_contents('/home/maximus/xml/fonds.txt', $output);
 
 /***** helper functions *****/
 function get_fonds_url($page = 1) {
