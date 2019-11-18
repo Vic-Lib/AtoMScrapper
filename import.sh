@@ -3,12 +3,6 @@
 
 localDir="/home/maximus/xml"
 
-php $localDir/scrapeFonds.php 
-
-#close STDOUT file descriptor
-#exec 1<&-
-# Close STDERR FD
-#exec 2<&-
 
 # Open STDOUT as a file for write.
 exec 1>$localDir/log/scrapeAtoM.txt
@@ -17,40 +11,15 @@ exec 1>$localDir/log/scrapeAtoM.txt
 exec 2>$localDir/log/stderr.txt
 
 #remove any existing files
-rm $localDir/scrape/*
+rm -R $localDir/scrape/*
 
-echo "######## SCRAPING FONDS FROM EXTERNAL ATOM SITE ########"
-IFS=$'\n'       # make newlines the only separator
-set -f          # disable globbing
+echo "######## UNZIPPIING FONDS FROM UPLOAD FOLDER ########"
+#IFS=$'\n'       # make newlines the only separator
+#set -f          # disable globbing
 
+tar -xf /home/upload/victoria-university-archives.tar.gz -C /home/maximus/xml/scrape/
 
-for i in $(cat < $localDir/fonds.txt); do
-   echo "scraping fonds $i"
-   
-   max_itter=0
-   sleep 1s
-   
-   #If the EAD files are cached you have to find the heading
-   EADurl=$(curl https://discoverarchives.library.utoronto.ca/index.php/$i | grep -o 'https://discoverarchives.library.utoronto.ca/downloads/exports/ead/[a-zA-Z0-9\.]*')
-
-   #If the EAD is not cached this is the link
-   #EADurl="https://discoverarchives.library.utoronto.ca/index.php/$i;ead?sf_format=xml"
-
-   curl -f -L -s -S -o $localDir/scrape/$i.xml $EADurl
-
-   response=$?
-
-   #Try 4 times to re load
-   while [ $response != 0 -a $max_itter -lt 4 ]
-   do      
-      sleep 10s
-      echo "---------- Failed with curl error $response fonds $i trying again -----------"
-      curl -f -L -s -S -o $localDir/scrape/$i.xml  "https://discoverarchives.library.utoronto.ca/index.php/$i;ead?sf_format=xml"
-      response=$?
-      max_itter=$[$max_itter+1]
-   done
-done
-
+cp $localDir/scrape/victoria-university-archives/descRecs/* $localDir/scrape
 
 echo "########## FINISHED SCRAPING FONDS ##########"
 
@@ -79,7 +48,7 @@ echo "######## IMPORTING #######"
 
 php /usr/share/nginx/atom/symfony import:bulk --update="delete-and-replace" /home/maximus/xml/scrape
 
-mysql -u delete atom -e 'DELETE FROM term_i18n WHERE culture NOT LIKE "en";'
+#mysql -u delete atom -e 'DELETE FROM term_i18n WHERE culture NOT LIKE "en";'
 
 echo "######## REBUILDING CACHE #######"
 #if you want the local AtoM instance to show the collection
